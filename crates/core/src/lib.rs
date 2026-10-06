@@ -1,7 +1,10 @@
-mod model;
-mod graph;
+pub mod error;
+pub mod model;
 mod traits;
-pub use model::{Node, NodeSocket, SampleBlock};
+// mod real_time_processing;
+// mod async_processing;
+pub use crate::error::AppError;
+pub use model::{Node, NodeKind, NodeSocket, SampleBlock, SocketDirection};
 
 // #[cfg(test)]
 
