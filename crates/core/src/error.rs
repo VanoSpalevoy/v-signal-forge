@@ -23,5 +23,3 @@ impl From<io::Error> for AppError {
         Self::Io(err)
     }
 }
-
-

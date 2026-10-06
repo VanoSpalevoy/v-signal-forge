@@ -23,7 +23,9 @@ mod tests {
     fn add_node_sums_multiple_inputs() {
         let add = Node::add("add");
 
-        let result = add.process(&[vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]]).unwrap();
+        let result = add
+            .process(&[vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]])
+            .unwrap();
 
         assert_eq!(result, vec![9.0, 12.0]);
     }
@@ -92,15 +94,17 @@ impl Node {
         match &self.kind {
             NodeKind::Source { samples } => Ok(samples.clone()),
             NodeKind::Gain { factor } => {
-                let input = inputs
-                    .first()
-                    .cloned()
-                    .ok_or_else(|| AppError::InvalidInput(format!("gain node '{}' has no input", self.name)))?;
+                let input = inputs.first().cloned().ok_or_else(|| {
+                    AppError::InvalidInput(format!("gain node '{}' has no input", self.name))
+                })?;
                 Ok(input.iter().map(|value| value * factor).collect())
             }
             NodeKind::Add => {
                 if inputs.is_empty() {
-                    return Err(AppError::InvalidInput(format!("add node '{}' has no inputs", self.name)));
+                    return Err(AppError::InvalidInput(format!(
+                        "add node '{}' has no inputs",
+                        self.name
+                    )));
                 }
 
                 let mut sum = inputs[0].clone();
@@ -117,10 +121,9 @@ impl Node {
                 }
                 Ok(sum)
             }
-            NodeKind::Sink => inputs
-                .first()
-                .cloned()
-                .ok_or_else(|| AppError::InvalidInput(format!("sink node '{}' has no input", self.name))),
+            NodeKind::Sink => inputs.first().cloned().ok_or_else(|| {
+                AppError::InvalidInput(format!("sink node '{}' has no input", self.name))
+            }),
         }
     }
 }
