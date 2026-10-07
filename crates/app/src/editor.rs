@@ -1,4 +1,5 @@
 use eframe::egui;
+use std::collections::HashMap;
 
 mod localization;
 mod ui;
@@ -20,9 +21,17 @@ impl NodeKind {
             Self::Sink => language.text(Text::Sink),
         }
     }
+
+    fn has_input(self) -> bool {
+        matches!(self, Self::Gain | Self::Sink)
+    }
+
+    fn has_output(self) -> bool {
+        matches!(self, Self::Source | Self::Gain)
+    }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum SocketKind {
     Input,
     Output,
@@ -37,16 +46,10 @@ impl SocketKind {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct SocketRef {
     node_id: usize,
     side: SocketKind,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-struct Connection {
-    from: SocketRef,
-    to: SocketRef,
 }
 
 #[derive(Clone, Debug)]
@@ -76,8 +79,8 @@ impl NodeWidget {
 
 pub struct SignalForgeApp {
     nodes: Vec<NodeWidget>,
-    connections: Vec<Connection>,
-    next_id: usize,
+    connections: HashMap<SocketRef, SocketRef>,
+    free_node_ids: Vec<usize>,
     pending_source: Option<SocketRef>,
     dragged_palette_kind: Option<NodeKind>,
     language: Language,
@@ -85,35 +88,25 @@ pub struct SignalForgeApp {
 
 impl Default for SignalForgeApp {
     fn default() -> Self {
-        let mut app = Self {
+        let app = Self {
             nodes: Vec::new(),
-            connections: Vec::new(),
-            next_id: 0,
+            connections: HashMap::new(),
+            free_node_ids: (0..=255).rev().collect(),
             pending_source: None,
             dragged_palette_kind: None,
             language: Language::English,
         };
 
-        app.nodes.push(NodeWidget::new(
-            app.next_id,
-            NodeKind::Source,
-            egui::pos2(80.0, 120.0),
-        ));
-        app.next_id += 1;
-        app.nodes.push(NodeWidget::new(
-            app.next_id,
-            NodeKind::Sink,
-            egui::pos2(420.0, 120.0),
-        ));
-        app.next_id += 1;
         app
     }
 }
 
 impl SignalForgeApp {
     fn add_node_at(&mut self, kind: NodeKind, pos: egui::Pos2) {
-        self.nodes.push(NodeWidget::new(self.next_id, kind, pos));
-        self.next_id += 1;
+        let Some(id) = self.free_node_ids.pop() else {
+            return;
+        };
+        self.nodes.push(NodeWidget::new(id, kind, pos));
     }
 
     fn render(&mut self, ui: &mut egui::Ui) {

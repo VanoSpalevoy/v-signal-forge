@@ -20,13 +20,13 @@ pub(super) fn show(app: &SignalForgeApp, ui: &mut egui::Ui) {
                 } else {
                     ui.label(app.language.text(Text::Ready));
                 }
-                for connection in &app.connections {
+                for (to, from) in &app.connections {
                     ui.label(format!(
                         "{} {:?} -> {} {:?}",
-                        connection.from.node_id,
-                        connection.from.side.label(app.language),
-                        connection.to.node_id,
-                        connection.to.side.label(app.language),
+                        from.node_id,
+                        from.side.label(app.language),
+                        to.node_id,
+                        to.side.label(app.language),
                     ));
                 }
             });
