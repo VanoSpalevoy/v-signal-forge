@@ -121,6 +121,7 @@ fn handle_node_interactions(app: &mut SignalForgeApp, ui: &mut egui::Ui) {
         app.connections
             .retain(|input, output| input.node_id != node_id && output.node_id != node_id);
         app.free_node_ids.push(node_id);
+        app.node_limit_reached = false;
         if app
             .pending_source
             .is_some_and(|source| source.node_id == node_id)

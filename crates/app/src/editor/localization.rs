@@ -19,6 +19,7 @@ pub(super) enum Text {
     Input,
     Output,
     DeleteNode,
+    NodeLimitReached,
     // EnableGrid,
     Format,
 }
@@ -48,6 +49,7 @@ impl Language {
             (Self::English, Text::Input) => "Input",
             (Self::English, Text::Output) => "Output",
             (Self::English, Text::DeleteNode) => "Delete node",
+            (Self::English, Text::NodeLimitReached) => "Node limit reached",
             // (Self::English, Text::EnableGrid) => "Enable Grid",
             (Self::English, Text::Format) => "Format",
             (Self::Russian, Text::Language) => "Язык",
@@ -63,6 +65,7 @@ impl Language {
             (Self::Russian, Text::Input) => "Вход",
             (Self::Russian, Text::Output) => "Выход",
             (Self::Russian, Text::DeleteNode) => "Удалить ноду",
+            (Self::Russian, Text::NodeLimitReached) => "Достигнут лимит нод",
             // (Self::Russian, Text::EnableGrid) => "Включить сетку",
             (Self::Russian, Text::Format) => "Форматировать",
         }
