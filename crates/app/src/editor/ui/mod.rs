@@ -1,12 +1,14 @@
 mod canvas;
 mod debug;
+mod node;
 mod palette;
 mod toolbar;
 
 use eframe::egui;
 
+use super::SignalForgeApp;
 pub(super) use super::localization::Language;
-use super::{NodeKind, SignalForgeApp};
+pub use node::{NodeConfig, NodeKind, NodeWidget, SocketKind, SocketRef};
 
 const WINDOW_BG: egui::Color32 = egui::Color32::from_rgb(10, 12, 16);
 const PANEL_BG: egui::Color32 = egui::Color32::from_rgb(14, 16, 22);
@@ -53,6 +55,7 @@ fn node_color(kind: NodeKind) -> egui::Color32 {
     match kind {
         NodeKind::Source => egui::Color32::from_rgb(75, 142, 88),
         NodeKind::Gain => egui::Color32::from_rgb(110, 92, 188),
+        NodeKind::Mixer => egui::Color32::from_rgb(56, 128, 145),
         NodeKind::Sink => egui::Color32::from_rgb(165, 90, 72),
     }
 }

@@ -13,7 +13,12 @@ pub(super) fn show(app: &mut SignalForgeApp, ui: &mut egui::Ui) {
             ui.vertical(|ui| {
                 ui.heading(app.language.text(crate::editor::Text::Nodes));
                 ui.separator();
-                for kind in [NodeKind::Source, NodeKind::Gain, NodeKind::Sink] {
+                for kind in [
+                    NodeKind::Source,
+                    NodeKind::Gain,
+                    NodeKind::Mixer,
+                    NodeKind::Sink,
+                ] {
                     let response = ui.add_sized(
                         [ui.available_width(), 36.0],
                         egui::Button::new(

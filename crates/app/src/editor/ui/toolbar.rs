@@ -1,6 +1,7 @@
 // Toolbar for the editor
 
 use eframe::egui;
+use egui::Widget;
 
 use super::{Language, panel_frame};
 use crate::editor::{SignalForgeApp, Text};
@@ -17,10 +18,15 @@ pub(super) fn show(app: &mut SignalForgeApp, ui: &mut egui::Ui) {
                 ui.add_space(12.0);
                 if ui.button(app.language.text(Text::Format)).clicked() {
                     for node in &mut app.nodes {
-                        node.pos.x = (node.pos.x / 100.0).round() * 100.0;
-                        node.pos.y = (node.pos.y / 100.0).round() * 100.0;
+                        node.pos.x = (node.pos.x / 50.0).round() * 50.0;
+                        node.pos.y = (node.pos.y / 50.0).round() * 50.0;
                     }
                 }
+                ui.separator();
+                egui::Slider::new(&mut app.scale, 0.5..=2.0)
+                    .text(app.language.text(Text::Scale))
+                    .show_value(true)
+                    .ui(ui);
                 ui.separator();
                 ui.label(app.language.text(Text::Settings));
                 ui.add_space(12.0);
