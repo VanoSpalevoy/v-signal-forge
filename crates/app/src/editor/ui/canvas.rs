@@ -1,4 +1,4 @@
-use eframe::{egui};
+use eframe::egui;
 use std::collections::HashMap;
 
 use super::{node_color, panel_frame};
@@ -51,12 +51,22 @@ fn handle_node_interactions(app: &mut SignalForgeApp, ui: &mut egui::Ui) {
             node.pos += drag_response.drag_delta();
         }
 
-        let input_response = node.kind.has_input().then(|| {
-            ui.allocate_rect(socket_rect(node, SocketKind::Input), egui::Sense::click())
-        });
-        let output_response = node.kind.has_output().then(|| {
-            ui.allocate_rect(socket_rect(node, SocketKind::Output), egui::Sense::click())
-        });
+        let input_responses: Vec<_> = (0..node.config.inputs.len())
+            .map(|index| {
+                ui.allocate_rect(
+                    socket_rect(node, SocketKind::Input, index),
+                    egui::Sense::click(),
+                )
+            })
+            .collect();
+        let output_responses: Vec<_> = (0..node.config.outputs.len())
+            .map(|index| {
+                ui.allocate_rect(
+                    socket_rect(node, SocketKind::Output, index),
+                    egui::Sense::click(),
+                )
+            })
+            .collect();
         let delete_response = ui
             .allocate_rect(delete_button_rect(node), egui::Sense::click())
             .on_hover_text(app.language.text(Text::DeleteNode));
@@ -66,25 +76,27 @@ fn handle_node_interactions(app: &mut SignalForgeApp, ui: &mut egui::Ui) {
             continue;
         }
 
-        if output_response
-            .as_ref()
-            .is_some_and(|response| response.clicked_by(egui::PointerButton::Primary))
+        if let Some(index) = output_responses
+            .iter()
+            .position(|response| response.clicked_by(egui::PointerButton::Primary))
         {
             app.pending_source = Some(SocketRef {
                 node_id: node.id,
                 side: SocketKind::Output,
+                index,
             });
         }
 
-        if input_response
-            .as_ref()
-            .is_some_and(|response| response.clicked_by(egui::PointerButton::Primary))
+        if let Some(index) = input_responses
+            .iter()
+            .position(|response| response.clicked_by(egui::PointerButton::Primary))
         {
             if let Some(from) = app.pending_source {
                 if from.node_id != node.id && from.side == SocketKind::Output {
                     let input = SocketRef {
                         node_id: node.id,
                         side: SocketKind::Input,
+                        index,
                     };
                     if app.connections.contains_key(&input) {
                         app.pending_source = None;
@@ -96,22 +108,23 @@ fn handle_node_interactions(app: &mut SignalForgeApp, ui: &mut egui::Ui) {
             }
         }
 
-        if output_response
-            .as_ref()
-            .is_some_and(|response| response.clicked_by(egui::PointerButton::Secondary))
+        if let Some(index) = output_responses
+            .iter()
+            .position(|response| response.clicked_by(egui::PointerButton::Secondary))
         {
             app.connections.retain(|_, from| {
-                !(from.node_id == node.id && from.side == SocketKind::Output)
+                !(from.node_id == node.id && from.side == SocketKind::Output && from.index == index)
             });
         }
 
-        if input_response
-            .as_ref()
-            .is_some_and(|response| response.clicked_by(egui::PointerButton::Secondary))
+        if let Some(index) = input_responses
+            .iter()
+            .position(|response| response.clicked_by(egui::PointerButton::Secondary))
         {
             app.connections.remove(&SocketRef {
                 node_id: node.id,
                 side: SocketKind::Input,
+                index,
             });
         }
     }
@@ -171,8 +184,8 @@ fn paint_connections(
             continue;
         };
 
-        let start = socket_pos(from_node, from.side);
-        let end = socket_pos(to_node, to.side);
+        let start = socket_pos(from_node, from.side, from.index);
+        let end = socket_pos(to_node, to.side, to.index);
         let handle = (end.x - start.x).abs() * 0.5;
         let control1 = start + egui::vec2(handle, 0.0);
         let control2 = end - egui::vec2(handle, 0.0);
@@ -186,10 +199,10 @@ fn paint_connections(
     }
 }
 
-fn paint_nodes(nodes: &[NodeWidget], painter: &egui::Painter, language: super::Language) {
+fn paint_nodes(nodes: &[NodeWidget], painter: &egui::Painter, _language: super::Language) {
     for node in nodes {
         let rect = node.rect();
-        painter.rect_filled(rect, 10.0, node_color(node.kind));
+        painter.rect_filled(rect, 10.0, node_color(node.config.kind));
         painter.rect_stroke(
             rect,
             10.0,
@@ -197,33 +210,53 @@ fn paint_nodes(nodes: &[NodeWidget], painter: &egui::Painter, language: super::L
             egui::StrokeKind::Inside,
         );
         painter.text(
-            rect.center(),
-            egui::Align2::CENTER_CENTER,
-            format!("{}{}", node.kind.label(language), node.id),
-            egui::FontId::proportional(15.0),
+            rect.right_top() + egui::vec2(-6.0, 6.0),
+            egui::Align2::RIGHT_TOP,
+            format!("{} {}", node.config.title, node.id),
+            egui::FontId::proportional(13.0),
             egui::Color32::WHITE,
         );
-        if node.kind.has_input() {
-            painter.circle_filled(
-                socket_pos(node, SocketKind::Input),
-                7.0,
+        for (index, content) in node.config.content.iter().enumerate() {
+            painter.text(
+                egui::pos2(rect.center().x, rect.top() + 50.0 + index as f32 * 22.0),
+                egui::Align2::CENTER_CENTER,
+                content,
+                egui::FontId::proportional(12.0),
                 egui::Color32::WHITE,
             );
         }
-        if node.kind.has_output() {
-            painter.circle_filled(
-                socket_pos(node, SocketKind::Output),
-                7.0,
-                egui::Color32::WHITE,
-            );
+        for (side, sockets) in [
+            (SocketKind::Input, &node.config.inputs),
+            (SocketKind::Output, &node.config.outputs),
+        ] {
+            for (index, label) in sockets.iter().enumerate() {
+                let pos = socket_pos(node, side, index);
+                painter.circle_filled(pos, 7.0, egui::Color32::WHITE);
+                let align = match side {
+                    SocketKind::Input => egui::Align2::LEFT_CENTER,
+                    SocketKind::Output => egui::Align2::RIGHT_CENTER,
+                };
+                let label_pos = pos
+                    + egui::vec2(
+                        if side == SocketKind::Input {
+                            10.0
+                        } else {
+                            -10.0
+                        },
+                        0.0,
+                    );
+                painter.text(
+                    label_pos,
+                    align,
+                    label,
+                    egui::FontId::proportional(10.0),
+                    egui::Color32::WHITE,
+                );
+            }
         }
 
         let delete_rect = delete_button_rect(node);
-        painter.rect_filled(
-            delete_rect,
-            4.0,
-            egui::Color32::from_rgb(105, 48, 48),
-        );
+        painter.rect_filled(delete_rect, 4.0, egui::Color32::from_rgb(105, 48, 48));
         painter.text(
             delete_rect.center(),
             egui::Align2::CENTER_CENTER,
@@ -234,20 +267,17 @@ fn paint_nodes(nodes: &[NodeWidget], painter: &egui::Painter, language: super::L
     }
 }
 
-fn socket_pos(node: &NodeWidget, side: SocketKind) -> egui::Pos2 {
-    match side {
-        SocketKind::Input => node.input_pos(),
-        SocketKind::Output => node.output_pos(),
-    }
+fn socket_pos(node: &NodeWidget, side: SocketKind, index: usize) -> egui::Pos2 {
+    node.socket_pos(side, index)
 }
 
-fn socket_rect(node: &NodeWidget, side: SocketKind) -> egui::Rect {
-    egui::Rect::from_center_size(socket_pos(node, side), egui::vec2(12.0, 12.0))
+fn socket_rect(node: &NodeWidget, side: SocketKind, index: usize) -> egui::Rect {
+    egui::Rect::from_center_size(socket_pos(node, side, index), egui::vec2(12.0, 12.0))
 }
 
 fn delete_button_rect(node: &NodeWidget) -> egui::Rect {
     egui::Rect::from_min_size(
-        node.rect().right_top() + egui::vec2(-DELETE_BUTTON_SIZE - 6.0, 6.0),
+        node.rect().left_top() + egui::vec2(6.0, 6.0),
         egui::vec2(DELETE_BUTTON_SIZE, DELETE_BUTTON_SIZE),
     )
 }

@@ -5,79 +5,10 @@ mod localization;
 mod ui;
 
 use localization::{Language, Text};
+use ui::NodeConfig;
+pub(super) use ui::{NodeKind, NodeWidget, SocketKind, SocketRef};
 
 pub(super) const MAX_NODE_COUNT: usize = 256;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NodeKind {
-    Source,
-    Gain,
-    Sink,
-}
-
-impl NodeKind {
-    fn label(self, language: Language) -> &'static str {
-        match self {
-            Self::Source => language.text(Text::Source),
-            Self::Gain => language.text(Text::Gain),
-            Self::Sink => language.text(Text::Sink),
-        }
-    }
-
-    fn has_input(self) -> bool {
-        matches!(self, Self::Gain | Self::Sink)
-    }
-
-    fn has_output(self) -> bool {
-        matches!(self, Self::Source | Self::Gain)
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-enum SocketKind {
-    Input,
-    Output,
-}
-
-impl SocketKind {
-    fn label(self, language: Language) -> &'static str {
-        match self {
-            Self::Input => language.text(Text::Input),
-            Self::Output => language.text(Text::Output),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-struct SocketRef {
-    node_id: usize,
-    side: SocketKind,
-}
-
-#[derive(Clone, Debug)]
-struct NodeWidget {
-    id: usize,
-    kind: NodeKind,
-    pos: egui::Pos2,
-}
-
-impl NodeWidget {
-    fn new(id: usize, kind: NodeKind, pos: egui::Pos2) -> Self {
-        Self { id, kind, pos }
-    }
-
-    fn rect(&self) -> egui::Rect {
-        egui::Rect::from_min_size(self.pos, egui::vec2(160.0, 90.0))
-    }
-
-    fn input_pos(&self) -> egui::Pos2 {
-        egui::pos2(self.pos.x, self.pos.y + 45.0)
-    }
-
-    fn output_pos(&self) -> egui::Pos2 {
-        egui::pos2(self.pos.x + 160.0, self.pos.y + 45.0)
-    }
-}
 
 pub struct SignalForgeApp {
     nodes: Vec<NodeWidget>,
@@ -87,6 +18,7 @@ pub struct SignalForgeApp {
     pending_source: Option<SocketRef>,
     dragged_palette_kind: Option<NodeKind>,
     language: Language,
+    scale: f32,
 }
 
 impl Default for SignalForgeApp {
@@ -99,6 +31,7 @@ impl Default for SignalForgeApp {
             pending_source: None,
             dragged_palette_kind: None,
             language: Language::English,
+            scale: 1.0,
         };
 
         app
@@ -112,7 +45,11 @@ impl SignalForgeApp {
             return;
         };
         self.node_limit_reached = false;
-        self.nodes.push(NodeWidget::new(id, kind, pos));
+        self.nodes.push(NodeWidget::new(
+            id,
+            NodeConfig::for_kind(kind, self.language),
+            pos,
+        ));
     }
 
     fn render(&mut self, ui: &mut egui::Ui) {

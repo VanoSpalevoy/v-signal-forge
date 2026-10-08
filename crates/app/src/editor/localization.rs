@@ -15,6 +15,7 @@ pub(super) enum Text {
     SelectedSourceSocket,
     Source,
     Gain,
+    Mixer,
     Sink,
     Input,
     Output,
@@ -22,6 +23,7 @@ pub(super) enum Text {
     NodeLimitReached,
     // EnableGrid,
     Format,
+    Scale,
 }
 
 impl Language {
@@ -45,6 +47,7 @@ impl Language {
             (Self::English, Text::SelectedSourceSocket) => "Selected source socket: node",
             (Self::English, Text::Source) => "Source",
             (Self::English, Text::Gain) => "Gain",
+            (Self::English, Text::Mixer) => "Mixer",
             (Self::English, Text::Sink) => "Sink",
             (Self::English, Text::Input) => "Input",
             (Self::English, Text::Output) => "Output",
@@ -52,6 +55,7 @@ impl Language {
             (Self::English, Text::NodeLimitReached) => "Node limit reached",
             // (Self::English, Text::EnableGrid) => "Enable Grid",
             (Self::English, Text::Format) => "Format",
+            (Self::English, Text::Scale) => "Scale",
             (Self::Russian, Text::Language) => "Язык",
             (Self::Russian, Text::Tools) => "Инструменты",
             (Self::Russian, Text::Settings) => "Настройки",
@@ -61,6 +65,7 @@ impl Language {
             (Self::Russian, Text::SelectedSourceSocket) => "Выбран выходной сокет ноды",
             (Self::Russian, Text::Source) => "Источник",
             (Self::Russian, Text::Gain) => "Усиление",
+            (Self::Russian, Text::Mixer) => "Микшер",
             (Self::Russian, Text::Sink) => "Приёмник",
             (Self::Russian, Text::Input) => "Вход",
             (Self::Russian, Text::Output) => "Выход",
@@ -68,6 +73,7 @@ impl Language {
             (Self::Russian, Text::NodeLimitReached) => "Достигнут лимит нод",
             // (Self::Russian, Text::EnableGrid) => "Включить сетку",
             (Self::Russian, Text::Format) => "Форматировать",
+            (Self::Russian, Text::Scale) => "Масштаб",
         }
     }
 }
